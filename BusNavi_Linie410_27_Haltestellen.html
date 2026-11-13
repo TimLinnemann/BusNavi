@@ -1,0 +1,46 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BusNavi – Linie 410 Emden–Aurich</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+*{box-sizing:border-box}body{font:16px system-ui;margin:0;background:#f3f6f8;color:#17212b}
+header{background:#075985;color:white;padding:16px}main{padding:14px;max-width:900px;margin:auto}
+button{background:#075985;color:white;border:0;border-radius:8px;padding:11px 14px;font-size:15px;margin:4px}
+#map{height:45vh;min-height:290px;border-radius:12px;border:1px solid #ccd5dc}
+.note{font-size:14px;color:#4b5563;background:white;padding:12px;border-radius:10px;margin:12px 0}
+ol{padding-left:28px}li{background:white;margin:6px 0;padding:9px;border-radius:8px}
+li button{float:right;margin:-3px 0 0 8px}
+</style></head>
+<body>
+<header><strong>🚌 BusNavi</strong><div>Linie 410 · Emden → Aurich</div></header>
+<main>
+<h2>Linie 410 – alle 27 Haltestellen</h2>
+<button id="loc">📍 Mein Standort</button><button id="route">Strecke anzeigen</button>
+<p id="status" role="status">Karte wird geladen …</p><div id="map"></div>
+<div class="note"><strong>Hinweis:</strong> Die Haltestellennamen folgen dem Fahrplandatensatz. Die blauen Kartenpunkte sind vorläufige Orientierungspositionen und noch nicht einzeln amtlich verifiziert. Diese Ansicht ist keine genaue Abbiege- oder Fahrtnavigation.</div>
+<h3>Haltestellen Richtung Aurich</h3><ol id="stops"></ol>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const names=[
+"Emden Hbf/ZOB","Emden Kunsthalle","Emden Neutorstraße","Emden Eggenastraße","Emden Sternburg",
+"Emden Gerhart-Hauptmann-Straße","Emden Concordiastraße","Emden Der Alte Postweg","Emden-Harsweg Erikaweg","Emden-Harsweg Friedensweg",
+"Suurhusen Sportplatz","Loppersum B 210/Moorweg","Abbingwehr","Finkenburg (Südbrookmerland)","Abelitz B 210/Abzw. Großes Meer",
+"Georgsheil ZOB","Uthwerdum B72/Uthwerdumer Straße","Südvictorbur B72/Schwarzer Weg","Moordorf B72/Schultrift","Moordorf B72/Ringstraße",
+"Moordorf B72/Extumer Trift","Walle (Aurich) B72/Heuweg","Aurich IGS/BBS","Aurich Dreekamp","Aurich B72/Wallster Weg","Aurich Gymnasium","Aurich ZOB"
+];
+// Nur wenige bekannte Ortsanker; Zwischenpunkte sind ausdrücklich schematische Orientierung, keine exakten Haltestellenkoordinaten.
+const anchors=[[53.367,7.206],[53.40,7.30],[53.45,7.40],[53.50,7.55],[53.469,7.482]];
+const coords=names.map((_,i)=>{const t=i/(names.length-1)*(anchors.length-1),j=Math.min(Math.floor(t),anchors.length-2),f=t-j;return [anchors[j][0]+(anchors[j+1][0]-anchors[j][0])*f,anchors[j][1]+(anchors[j+1][1]-anchors[j][1])*f]});
+const map=L.map('map').setView([53.43,7.39],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+const markers=coords.map((p,i)=>L.circleMarker(p,{radius:6,color:'#fff',weight:2,fillColor:'#1685c5',fillOpacity:1}).addTo(map).bindPopup((i+1)+'. '+names[i]));
+const line=L.polyline(coords,{color:'#1685c5',weight:4,dashArray:'7 7'}).addTo(map);
+const ol=document.getElementById('stops');
+names.forEach((n,i)=>{const li=document.createElement('li'),b=document.createElement('button');li.append(document.createTextNode((i+1)+'. '+n));b.textContent='Auf Karte';b.onclick=()=>{map.setView(coords[i],14);markers[i].openPopup()};li.append(b);ol.append(li)});
+document.getElementById('route').onclick=()=>map.fitBounds(line.getBounds(),{padding:[20,20]});
+let gps;
+document.getElementById('loc').onclick=()=>{const s=document.getElementById('status');if(!navigator.geolocation){s.textContent='Standortabfrage wird nicht unterstützt.';return}s.textContent='Standort wird angefragt …';navigator.geolocation.getCurrentPosition(p=>{const q=[p.coords.latitude,p.coords.longitude];if(gps)map.removeLayer(gps);gps=L.marker(q).addTo(map).bindPopup('Dein Standort').openPopup();map.setView(q,15);s.textContent='Standort gefunden.'},e=>s.textContent='Standort nicht verfügbar: '+e.message,{enableHighAccuracy:true,timeout:15000})};
+</script></body></html>
