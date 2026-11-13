@@ -1,0 +1,53 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>BusNavi – Emden nach Aurich</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+<style>
+body{font:16px system-ui;margin:0;background:#f3f6f8;color:#17212b}
+header{background:#075985;color:white;padding:16px}
+main{padding:14px;max-width:850px;margin:auto}
+button{background:#075985;color:white;border:0;border-radius:8px;padding:12px 16px;font-size:16px;margin:5px 4px 8px 0}
+#map{height:55vh;min-height:320px;border-radius:12px;border:1px solid #ccd5dc}
+.note{font-size:14px;color:#4b5563;background:white;padding:12px;border-radius:10px;margin:12px 0}
+</style>
+</head>
+<body>
+<header><strong>🚌 BusNavi</strong><div>Linie 410 · Emden → Aurich</div></header>
+<main>
+<h2>Linie 410 – Emden nach Aurich</h2>
+<p>Testansicht der Verbindung. Die Haltestellenpunkte sind nur ungefähre Orientierungspunkte.</p>
+<button id="loc">📍 Mein Standort</button>
+<button id="route">Strecke anzeigen</button>
+<div id="status" role="status">Karte wird geladen …</div>
+<div id="map"></div>
+<div class="note">Wichtig: Für GPS muss diese Seite über eine sichere HTTPS-Adresse geöffnet werden. Bei einer lokal heruntergeladenen HTML-Datei oder innerhalb einer ChatGPT-Vorschau kann der Browser den Standortzugriff blockieren. Eine öffentliche HTTPS-App-Adresse kann ich hier nicht selbst hosten.</div>
+</main>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script>
+const map=L.map('map').setView([53.45,7.35],10);
+L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19,attribution:'© OpenStreetMap'}).addTo(map);
+const stops=[[53.367,7.206],[53.375,7.27],[53.39,7.31],[53.405,7.34],[53.42,7.39],[53.44,7.43],[53.46,7.48],[53.48,7.53],[53.50,7.57],[53.51,7.61],[53.52,7.64],[53.53,7.67],[53.54,7.70],[53.55,7.73]];
+const line=L.polyline(stops,{color:'#1685c5',weight:5,dashArray:'7 7'}).addTo(map);
+stops.forEach((p,i)=>L.circleMarker(p,{radius:5,color:'#fff',weight:2,fillColor:'#1685c5',fillOpacity:1}).addTo(map).bindPopup('Haltepunkt '+(i+1)+' · ungefähre Position'));
+L.marker(stops[0]).addTo(map).bindPopup('Emden · Start');
+L.marker(stops[stops.length-1]).addTo(map).bindPopup('Aurich · Ziel');
+document.getElementById('route').onclick=()=>map.fitBounds(line.getBounds(),{padding:[20,20]});
+let marker;
+document.getElementById('loc').onclick=()=>{
+ const s=document.getElementById('status');
+ if(!navigator.geolocation){s.textContent='Dieser Browser unterstützt keine Standortabfrage.';return;}
+ s.textContent='Standort wird angefragt …';
+ navigator.geolocation.getCurrentPosition(pos=>{
+  const p=[pos.coords.latitude,pos.coords.longitude];
+  if(marker) map.removeLayer(marker);
+  marker=L.marker(p).addTo(map).bindPopup('Dein Standort').openPopup();
+  map.setView(p,15);s.textContent='Standort gefunden.';
+ },err=>{
+  s.textContent='Standort nicht verfügbar: '+err.message+' (GPS benötigt eine HTTPS-Seite und eine Browserfreigabe.)';
+ },{enableHighAccuracy:true,timeout:15000});
+};
+</script>
+</body></html>
